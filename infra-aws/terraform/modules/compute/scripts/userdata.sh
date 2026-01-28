@@ -1,5 +1,9 @@
 #!/bin/bash
 
+## Waiting for EC2 instance to be ready
+sleep 45
+
+
 # Update packages
 apt-get update -y
 
@@ -30,7 +34,7 @@ systemctl start docker
 
 # Check docker version
 docker --version
-docker-compose --version
+docker compose version
 
-## Source ##
+## Source guide installation ##
 # >  https://docs.docker.com/engine/install/ubuntu/

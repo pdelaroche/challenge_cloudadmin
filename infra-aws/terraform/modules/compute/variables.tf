@@ -18,3 +18,8 @@ variable "security_group_id" {
   type        = string
 
 }
+
+variable "key_pair_name" {
+  description = "SSH key to access monitoring instance"
+  type        = string
+}

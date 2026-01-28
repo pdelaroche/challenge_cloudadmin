@@ -27,3 +27,8 @@ variable "instance_type" {
   description = "EC2 instance type"
   type        = string
 }
+
+variable "key_pair_name" {
+  description = "SSH key to access monitoring instance"
+  type        = string
+}
