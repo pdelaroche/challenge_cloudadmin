@@ -1,4 +1,4 @@
-# AWS Observability Stack
+# AWS Observability Project
 
 ## Objetive
 Create an EC2 instance and installs Prometheus and Grafana using Docker.
