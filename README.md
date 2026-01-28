@@ -9,7 +9,11 @@ Create an EC2 instance and installs Prometheus and Grafana using Docker.
 * **CircleCI**: To run the deployment pipeline.
 * **Docker**: To run Prometheus and Grafana in containers
 
-## Architecture
+## Diagram
+
+[AWS Architecture Diagram](./docs/diagram_cicd-ec2-monitoring.png.jpg)
+
+## Project Structure
 ├── docker
 │   └── docker-compose.yml
 ├── infra-aws
@@ -30,6 +34,8 @@ Create an EC2 instance and installs Prometheus and Grafana using Docker.
 │       └── variables.tf
 └── scripts
     └── docker-config.sh
+
+
 
 ## How to run it
 ...WiP...
