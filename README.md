@@ -11,9 +11,10 @@ Create an EC2 instance and installs Prometheus and Grafana using Docker.
 
 ## Diagram
 
-![Diagram](./docs/diagram_cicd-ec2-monitoring.png.jpg)
+![Diagram](./docs/diagram_cicd-ec2-monitoring.png)
 
 ## Project Structure
+```
 ├── docker
 │   └── docker-compose.yml
 ├── infra-aws
@@ -34,6 +35,7 @@ Create an EC2 instance and installs Prometheus and Grafana using Docker.
 │       └── variables.tf
 └── scripts
     └── docker-config.sh
+```
 
 
 
