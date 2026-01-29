@@ -34,6 +34,8 @@ jobs:
             cd infra-aws/terraform/environments/dev
             terraform apply -auto-approve tfplan
             terraform output -raw monitoring_server_public_ip > /tmp/ec2_ip.txt
+            cat /tmp/ec2_ip.txt
+
       
       - persist_to_workspace:
           root: /tmp
