@@ -13,26 +13,22 @@ jobs:
       - run:
           name: Terraform Init
           command: |
-            cd terraform/environments/dev
-            terraform init
+infra-aws/terraform/environments/dev            terraform init
       
       - run:
           name: Terraform Validate
           command: |
-            cd terraform/environments/dev
-            terraform validate
+infra-aws/terraform/environments/dev            terraform validate
       
       - run:
           name: Terraform Plan
           command: |
-            cd terraform/environments/dev
-            terraform plan -out=tfplan
+infra-aws/terraform/environments/dev            terraform plan -out=tfplan
       
       - run:
           name: Terraform Apply
           command: |
-            cd terraform/environments/dev
-            terraform plan -out=tfplan
+infra-aws/terraform/environments/dev            terraform plan -out=tfplan
             terraform apply -auto-approve tfplan
             terraform output -raw ec2_public_ip > /tmp/ec2_ip.txt
       
@@ -108,14 +104,12 @@ jobs:
       - run:
           name: Terraform Init
           command: |
-            cd terraform/environments/dev
-            terraform init
+infra-aws/terraform/environments/dev            terraform init
       
       - run:
           name: Terraform Destroy
           command: |
-            cd terraform/environments/dev
-            terraform destroy -auto-approve
+infra-aws/terraform/environments/dev            terraform destroy -auto-approve
 
 
 ### Workflow implementation ###
