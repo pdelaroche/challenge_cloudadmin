@@ -9,38 +9,43 @@ Deploy Prometheus and Grafana to AWS EC2 instance.
 * **CircleCI**: To run the deployment pipeline.
 * **Docker**: To run Prometheus and Grafana in containers
 
-## Diagram
+## HLD Diagram
 
 ![Diagram](./docs/diagram_cicd-ec2-monitoring.png)
 
 ## Project Structure
+```.
+└── terraform
+    ├── environments
+    │   ├── dev
+    │   │   ├── backend.tf
+    │   │   ├── dev.tfvars
+    │   │   ├── main.tf
+    │   │   ├── outputs.tf
+    │   │   ├── provider.tf
+    │   │   ├── terraform.tfstate
+    │   │   ├── terraform.tfstate.backup
+    │   │   └── variables.tf
+    │   └── prod
+    │       ├── backend.tf
+    │       ├── main.tf
+    │       ├── outputs.tf
+    │       ├── prod.tfvars
+    │       ├── provider.tf
+    │       ├── terraform.tfstate
+    │       ├── terraform.tfstate.backup
+    │       └── variables.tf
+    ├── modules
+    │   ├── compute
+    │   │   ├── data.tf
+    │   │   ├── main.tf
+    │   │   ├── outputs.tf
+    │   │   ├── scripts
+    │   │   │   └── userdata.sh
+    │   │   └── variables.tf
+    │   └── network
+    │       ├── main.tf
+    │       ├── outputs.tf
+    │       └── variables.tf
+    └── terraform.tf
 ```
-├── docker
-│   └── docker-compose.yml
-├── infra-aws
-│   └── terraform
-│       ├── environments
-│       │   ├── dev
-│       │   │   ├── maint.tf
-│       │   │   ├── outputs.tf
-│       │   │   └── provider.tf
-│       │   └── prod
-│       │       ├── maint.tf
-│       │       ├── outputs.tf
-│       │       └── provider.tf
-│       ├── modules
-│       │   └── compute
-│       │       └── network
-│       ├── terraform.tfvars
-│       └── variables.tf
-└── scripts
-    └── docker-config.sh
-```
-
-
-
-## How to run it
-...WiP...
-
-## Key decisions
-...WiP...
