@@ -126,7 +126,7 @@ jobs:
           name: Terraform Destroy
           command: |
             cd infra-aws/terraform/environments/dev
-            terraform destroy -auto-approve
+            terraform destroy  -var-file="dev.tfvars" -auto-approve
 
 
 ### Workflow implementation ###
