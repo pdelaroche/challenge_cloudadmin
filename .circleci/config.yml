@@ -82,6 +82,7 @@ jobs:
           command: |
             EC2_IP=$(cat /tmp/ec2_ip.txt)
             ssh -o StrictHostKeyChecking=no -i ~/.ssh/monitoring_key ubuntu@$EC2_IP "mkdir -p /home/ubuntu/monitoring/"
+            cd docker
             scp -i ~/.ssh/monitoring_key docker-compose.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
             scp -i ~/.ssh/monitoring_key prometheus.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
       
