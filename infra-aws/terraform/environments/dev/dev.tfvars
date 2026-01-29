@@ -1,0 +1,6 @@
+region             = "eu-west-1"
+env_01             = "dev"
+vpc_cidr           = "172.16.0.0/16"
+public_subnet_cidr = "172.16.1.0/24"
+instance_type      = "t3.micro"
+key_pair_name      = "monitoring-instance-key"
