@@ -58,6 +58,18 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y openssh-client
+
+      - run:
+          name: Setup SSH
+          command: |
+            set -x
+            mkdir -p ~/.ssh
+            rm -f ~/.ssh/id_rsa
+            printf '%s' "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            EC2_IP=$(cat /tmp/ec2_ip.txt)
+            ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts
+
       - run:
           name: DEBUG SSH KEY
           command: |
@@ -65,18 +77,7 @@ jobs:
             ls -l ~/.ssh/id_rsa || true
             ssh-keygen -y -f ~/.ssh/id_rsa || echo "INVALID KEY"
             ssh-keygen -E md5 -lf ~/.ssh/id_rsa
-      
-      - run:
-          name: Setup SSH
-          command: |
-            set -x
-            mkdir -p ~/.ssh
-            printf '%s' "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            
-            EC2_IP=$(cat /tmp/ec2_ip.txt)
-            ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts
-      
+
       - run:
           name: Copy configuration files
           command: |
