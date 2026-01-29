@@ -64,6 +64,7 @@ jobs:
             echo "SSH_PRIVATE_KEY length: ${#SSH_PRIVATE_KEY}"
             ls -l ~/.ssh/id_rsa || true
             ssh-keygen -y -f ~/.ssh/id_rsa || echo "INVALID KEY"
+            ssh-keygen -E md5 -lf ~/.ssh/id_rsa
       
       - run:
           name: Setup SSH
