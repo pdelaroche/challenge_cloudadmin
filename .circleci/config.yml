@@ -32,7 +32,6 @@ jobs:
           name: Terraform Apply
           command: |
             cd infra-aws/terraform/environments/dev
-            terraform plan -out=tfplan
             terraform apply tfplan -auto-approve 
             terraform output -raw ec2_public_ip > /tmp/ec2_ip.txt
       
