@@ -79,7 +79,7 @@ jobs:
           name: Deploy containers
           command: |
             EC2_IP=$(cat /tmp/ec2_ip.txt)
-            ssh -i ~/.ssh/id_rsa ubuntu@$EC2_IP << 'EOF'
+            ssh -i ~/.ssh/id_rsa ubuntu@$EC2_IP \<< 'EOF'
               SECRET=$(aws secretsmanager get-secret-value \
                 --secret-id dev/grafana-credentials \
                 --region eu-west-1 \
@@ -122,21 +122,17 @@ jobs:
 workflows:
   deploy-monitoring-stack:
     jobs:
-      - terraform-apply:
-          filters:
-            branches:
-              only: main
+      - terraform-deploy
       
       - deploy-app:
           requires:
-            - terraform-apply
+            - terraform-deploy
       
-      - hold-for-approval:
+      - wait-for-manual-approval:
           type: approval
           requires:
             - deploy-app
       
       - terraform-destroy:
           requires:
-            - hold-for-approval
-
+            - wait-for-manual-approval
