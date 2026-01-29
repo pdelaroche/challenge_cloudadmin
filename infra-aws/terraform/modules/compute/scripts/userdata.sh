@@ -32,9 +32,25 @@ apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin do
 systemctl enable docker
 systemctl start docker
 
+# Add permision to generic ubuntu user
+usermod -aG docker ubuntu
+
 # Check docker version
-docker --version
+docker version
 docker compose version
 
-## Source guide installation ##
-# >  https://docs.docker.com/engine/install/ubuntu/
+#install awscli v2
+snap install aws-cli --classic
+
+#Install jq tool
+apt install -y jq
+
+#Secrets inyection
+SECRET=$(aws secretsmanager get-secret-value \
+  --secret-id dev/grafana-credentials \
+  --region eu-west-1 \
+  --output text \
+  --query SecretString)  
+
+GF_SECURITY_ADMIN_USER=$(echo $SECRET | jq -r .username) \
+GF_SECURITY_ADMIN_PASSWORD=$(echo $SECRET | jq -r .password)

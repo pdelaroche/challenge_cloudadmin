@@ -1,26 +1,142 @@
 version: 2.1
 
-# Define the jobs we want to run for this project
 jobs:
-  build:
-    docker:
-      - image: cimg/base:2023.03
-    steps:
-      - checkout
-      - run: echo "this is the build job"
-  test:
-    docker:
-      - image: cimg/base:2023.03
-    steps:
-      - checkout
-      - run: echo "this is the test job"
 
-# Orchestrate our job run sequence
+#### Terraform Workflow deployment ###
+  terraform-deploy:
+    docker:
+      - image: hashicorp/terraform:latest
+    
+    steps:
+      - checkout
+      
+      - run:
+          name: Terraform Init
+          command: |
+            cd terraform/environments/dev
+            terraform init
+      
+      - run:
+          name: Terraform Validate
+          command: |
+            cd terraform/environments/dev
+            terraform validate
+      
+      - run:
+          name: Terraform Plan
+          command: |
+            cd terraform/environments/dev
+            terraform plan -out=tfplan
+      
+      - run:
+          name: Terraform Apply
+          command: |
+            cd terraform/environments/dev
+            terraform plan -out=tfplan
+            terraform apply -auto-approve tfplan
+            terraform output -raw ec2_public_ip > /tmp/ec2_ip.txt
+      
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - ec2_ip.txt
+
+
+### Docker Workflow deployment ###
+  deploy-app:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      
+      - attach_workspace:
+          at: /tmp
+      
+      - run:
+          name: Setup installation
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y openssh-client
+      
+      - run:
+          name: Setup SSH
+          command: |
+            mkdir -p ~/.ssh
+            echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            
+            EC2_IP=$(cat /tmp/ec2_ip.txt)
+            ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts
+      
+      - run:
+          name: Copy configuration files
+          command: |
+            EC2_IP=$(cat /tmp/ec2_ip.txt)
+            scp -i ~/.ssh/id_rsa docker-compose.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
+            scp -i ~/.ssh/id_rsa prometheus.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
+      
+      - run:
+          name: Deploy containers
+          command: |
+            EC2_IP=$(cat /tmp/ec2_ip.txt)
+            ssh -i ~/.ssh/id_rsa ubuntu@$EC2_IP << 'EOF'
+              SECRET=$(aws secretsmanager get-secret-value \
+                --secret-id dev/grafana-credentials \
+                --region eu-west-1 \
+                --output text \
+                --query SecretString)
+              
+              export GF_SECURITY_ADMIN_USER=$(echo $SECRET | jq -r .username)
+              export GF_SECURITY_ADMIN_PASSWORD=$(echo $SECRET | jq -r .password)
+              
+              cd /home/ubuntu/monitoring
+              docker compose down || true
+              docker compose up -d
+              
+              echo "Deployment completedd"
+              docker compose ps -a
+            EOF
+
+
+### Terraform destroy ###
+  terraform-destroy:
+    docker:
+      - image: hashicorp/terraform:1.10
+    steps:
+      - checkout
+      
+      - run:
+          name: Terraform Init
+          command: |
+            cd terraform/environments/dev
+            terraform init
+      
+      - run:
+          name: Terraform Destroy
+          command: |
+            cd terraform/environments/dev
+            terraform destroy -auto-approve
+
+
+### Workflow implementation ###
 workflows:
-  build_and_test:
+  deploy-monitoring-stack:
     jobs:
-      - build
-      - test
- 
-      ## Source
-      # https://circleci.com/docs/guides/toolkit/sample-config/#sample-configuration-with-sequential-workflow
+      - terraform-apply:
+          filters:
+            branches:
+              only: main
+      
+      - deploy-app:
+          requires:
+            - terraform-apply
+      
+      - hold-for-approval:
+          type: approval
+          requires:
+            - deploy-app
+      
+      - terraform-destroy:
+          requires:
+            - hold-for-approval
+
