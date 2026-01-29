@@ -80,6 +80,7 @@ jobs:
           name: Copy configuration files
           command: |
             EC2_IP=$(cat /tmp/ec2_ip.txt)
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$EC2_IP "mkdir -p /home/ubuntu/monitoring/"
             scp -i ~/.ssh/id_rsa docker-compose.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
             scp -i ~/.ssh/id_rsa prometheus.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
       
