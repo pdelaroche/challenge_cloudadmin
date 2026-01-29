@@ -64,7 +64,7 @@ jobs:
           command: |
             set -x
             mkdir -p ~/.ssh
-            echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+            echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
             
             EC2_IP=$(cat /tmp/ec2_ip.txt)
