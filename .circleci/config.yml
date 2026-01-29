@@ -122,21 +122,21 @@ jobs:
 workflows:
   deploy-monitoring-stack:
     jobs:
-      - terraform-apply:
+      - terraform-deploy:
           filters:
             branches:
               only: main
       
       - deploy-app:
           requires:
-            - terraform-apply
+            - terraform-deploy
       
-      - hold-for-approval:
+      - wait-for-manual-approval:
           type: approval
           requires:
             - deploy-app
       
       - terraform-destroy:
           requires:
-            - hold-for-approval
+            -wait-for-manual-approval
 
