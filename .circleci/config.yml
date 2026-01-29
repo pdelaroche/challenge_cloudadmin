@@ -26,14 +26,14 @@ jobs:
           name: Terraform Plan
           command: |
             cd infra-aws/terraform/environments/dev
-            terraform plan -out=tfplan -var-file="terraform.tfvars"
+            terraform plan -out=tfplan -var-file="dev.tfvars"
       
       - run:
           name: Terraform Apply
           command: |
             cd infra-aws/terraform/environments/dev
             terraform plan -out=tfplan
-            terraform apply -auto-approve -var-file="terraform.tfvars"
+            terraform apply -auto-approve -var-file="dev.tfvars"
             terraform output -raw ec2_public_ip > /tmp/ec2_ip.txt
       
       - persist_to_workspace:
