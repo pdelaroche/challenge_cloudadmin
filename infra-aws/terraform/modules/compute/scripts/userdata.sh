@@ -44,13 +44,3 @@ snap install aws-cli --classic
 
 #Install jq tool
 apt install -y jq
-
-#Secrets inyection
-SECRET=$(aws secretsmanager get-secret-value \
-  --secret-id dev/grafana-credentials \
-  --region eu-west-1 \
-  --output text \
-  --query SecretString)  
-
-GF_SECURITY_ADMIN_USER=$(echo $SECRET | jq -r .username) \
-GF_SECURITY_ADMIN_PASSWORD=$(echo $SECRET | jq -r .password)

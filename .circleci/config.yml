@@ -89,6 +89,7 @@ jobs:
       - run:
           name: Deploy containers
           command: |
+            sleep 90
             EC2_IP=$(cat /tmp/ec2_ip.txt)
             ssh -i ~/.ssh/monitoring_key ubuntu@$EC2_IP \<< 'EOF'
               SECRET=$(aws secretsmanager get-secret-value \
@@ -101,7 +102,6 @@ jobs:
               export GF_SECURITY_ADMIN_PASSWORD=$(echo $SECRET | jq -r .password)
               
               cd /home/ubuntu/monitoring
-              docker compose down || true
               docker compose up -d
               
               echo "Deployment completedd"
