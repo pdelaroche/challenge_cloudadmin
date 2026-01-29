@@ -58,6 +58,12 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y openssh-client
+      - run:
+          name: DEBUG SSH KEY
+          command: |
+            echo "SSH_PRIVATE_KEY length: ${#SSH_PRIVATE_KEY}"
+            ls -l ~/.ssh/id_rsa || true
+            ssh-keygen -y -f ~/.ssh/id_rsa || echo "INVALID KEY
       
       - run:
           name: Setup SSH
