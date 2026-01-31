@@ -7,6 +7,9 @@ jobs:
     docker:
       - image: ghcr.io/terraform-linters/tflint:latest
     steps:
+      - run:
+          name: Install dependencies
+          command: apk add --no-cache git openssh
       - checkout
 
       - run:
