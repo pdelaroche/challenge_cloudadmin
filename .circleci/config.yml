@@ -3,7 +3,7 @@ version: 2.1
 jobs:
 
 #### Terraform Workflow deployment ###
-   tflint:
+  tflint:
     docker:
       - image: ghcr.io/terraform-linters/tflint:latest
     steps:
@@ -16,7 +16,7 @@ jobs:
             tflint --init
             tflint --recursive --format compact
 
-    terraform-deploy:
+  terraform-deploy:
     docker:
       - image: hashicorp/terraform:latest
     steps:
@@ -136,8 +136,8 @@ workflows:
       - tflint
 
       - terraform-deploy:
-        requires:
-          - tflint
+          requires:
+            - tflint
 
       - deploy-app:
           requires:
