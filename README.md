@@ -13,43 +13,48 @@ Este proyecto despliega un stack completo de monitorización en AWS utilizando p
 
 ```
 challenge_cloudadmin/
-├── .circleci/
-│   └── config.yml               
-├── docker/
-│   ├── docker-compose.yml         
-│   └── prometheus.yml             
-├── infra-aws/
-│   └── terraform/
-│       ├── environments/
-│       │   ├── dev/
-│       │   │   ├── backend.tf     
-│       │   │   ├── dev.tfvars     
-│       │   │   ├── main.tf        
-│       │   │   ├── outputs.tf     
-│       │   │   ├── provider.tf    
-│       │   │   └── variables.tf  
-│       │   └── prod/
-│       │       ├── backend.tf
-│       │       ├── prod.tfvars
-│       │       ├── main.tf
-│       │       ├── outputs.tf
-│       │       ├── provider.tf
-│       │       └── variables.tf
-│       ├── modules/
-│       │   ├── compute/
-│       │   │   ├── data.tf        
-│       │   │   ├── main.tf        
-│       │   │   ├── outputs.tf
-│       │   │   ├── scripts/
-│       │   │   │   └── userdata.sh 
-│       │   │   └── variables.tf
-│       │   └── network/
-│       │       ├── main.tf 
-│       │       ├── outputs.tf
-│       │       └── variables.tf
-│       └── terraform.tf
-├── .gitignore
-└── README.md
+    ├── .circleci/
+    │   └── config.yml
+    ├── .gitignore
+    ├── README.md
+    ├── docker/
+    │   ├── docker-compose.yml
+    │   └── prometheus.yml
+    └── infra-aws/
+        └── terraform/
+            ├── .tflint.hcl
+            ├── environments/
+            │   ├── dev/
+            │   │   ├── backend.tf
+            │   │   ├── dev.tfvars
+            │   │   ├── main.tf
+            │   │   ├── outputs.tf
+            │   │   ├── provider.tf
+            │   │   ├── variables.tf
+            │   │   └── versions.tf
+            │   └── prod/
+            │       ├── backend.tf
+            │       ├── main.tf
+            │       ├── outputs.tf
+            │       ├── prod.tfvars
+            │       ├── provider.tf
+            │       ├── variables.tf
+            │       └── versions.tf
+            ├── modules/
+            │   ├── compute/
+            │   │   ├── data.tf
+            │   │   ├── main.tf
+            │   │   ├── outputs.tf
+            │   │   ├── scripts/
+            │   │   │   └── userdata.sh
+            │   │   ├── variables.tf
+            │   │   └── versions.tf
+            │   └── network/
+            │       ├── main.tf
+            │       ├── outputs.tf
+            │       ├── variables.tf
+            │       └── versions.tf
+            └── versions.tf
 ```
 
 ---
@@ -76,14 +81,16 @@ La ejecucion del terraform apply se debe hacer con las tfvars correspondientes d
 │       │   │   ├── main.tf        
 │       │   │   ├── outputs.tf     
 │       │   │   ├── provider.tf    
-│       │   │   └── variables.tf  
+│       │   │   ├── variables.tf  
+│       │   │   └── versions.tf
 │       │   └── prod/
 │       │       ├── backend.tf
 │       │       ├── prod.tfvars
 │       │       ├── main.tf
 │       │       ├── outputs.tf
 │       │       ├── provider.tf
-│       │       └── variables.tf
+│       │       ├── variables.tf  
+│       │       └── versions.tf
 ```
 # Modules:
 ```
@@ -95,10 +102,12 @@ La ejecucion del terraform apply se debe hacer con las tfvars correspondientes d
 │       │   │   ├── scripts/
 │       │   │   │   └── userdata.sh 
 │       │   │   └── variables.tf
+│       │       └── versions.tf
 │       │   └── network/
 │       │       ├── main.tf 
 │       │       ├── outputs.tf
 │       │       └── variables.tf
+│       │       └── versions.tf
 ```
 Se han implementado dos modulos
 - Network: Definimos la logica de red basica con una public subnet, un sg estos se implementaron en outputs.tf por la dependencia que tendra con el siguiente modulo de compute
@@ -124,27 +133,28 @@ Se han implementado dos modulos
 ###  Arquitectura de Red: Subnet Pública Única
 
 Subnet pública con Internet Gateway
-Security group para permitir la carga de trabajo con prometheus, grafana y la conectividad ssh de circleCI
-RT definido para la logica de conectividad necesaria para la subnet publica con el igw
+Security group para permitir la carga de trabajo con prometheus, grafana y la conectividad SSH de CircleCI
+Route Table configurada para permitir la conectividad hacia el Internet Gateway
 
 ---
 
-## Prerrequisitos
+## Configuraciones y Prerrequisitos
 
 ### Requisitos Locales para testeo manual
-
+- OS: Linux terminal
 - AWS CLI v2
 - Terraform
 - Git
-- IDE
+- tflint
+- IDE (VS Code o el que prefieras)
 - Config AWS Credentials / SSO profile
 
-### Requisitos en AWS (manuales)
+### Requisitos en AWS (implementado manualmente)
 
 **Usuario/Rol IAM CircleCI**
     En mi caso lo añadi al grupo de Administrators para pruebas rapidas
 
-**Secrets Manager** para credenciales de Grafana, en este caso se añadieron manualmente
+**Secrets Manager** Para iniciar sesion en el dashboard de Grafana
 
 ### Requisitos en CircleCI
 
@@ -154,22 +164,17 @@ Configurar las siguientes variables de entorno en la configuración del proyecto
 `AWS_DEFAULT_REGION` Región AWS (ej: `eu-west-1`)
 `SSH_PRIVATE_KEY`  Clave privada SSH codificada en Base64 para acceso EC2 
 
-Nota: Se genero un usuario IAM con permisos de Administrator para los lanzamientos de pipelines
-
-
 **Para codificar la clave SSH para CircleCI**:
 Desde local
 ```bash
 base64 -w 0 monitoring-key.pem
 ```
 
----
-
-## Configuración
-
 ### Variables de Terraform
 
-Editar `infra-aws/terraform/environments/"tu_environment"/"tu_environment".tfvars`:
+Editar `infra-aws/terraform/environments/"tu_environment"/"tu_environment".tfvars`
+
+Añadir la siguiente config:
 
 ```hcl
 # Entorno
@@ -186,9 +191,11 @@ key_pair_name = "monitoring-key"
 
 ### Configuración de Prometheus
 
-En este caso se hizo una configuracion sencilla para poder tener un target del propio node exporte y obtener metricas de la EC2 y de prometheus
+En este caso se hizo una configuracion sencilla para poder tener un target del propio node exporte y obtener metricas de la EC2
 
-Editar `docker/prometheus.yml`
+Edita `docker/prometheus.yml`
+
+Añadir la siguiente config:
 
 ```yaml
 global:
@@ -213,11 +220,11 @@ scrape_configs:
 
 1. Hacer push de cambios al repositorio
 2. CircleCI dispara automáticamente el pipeline si tienes configurado el trigger (esta por defecto)
-3. Pipeline steps:
-   - **terraform-deploy**: Aprovisiona la infraestructura AWS
-   - **deploy-app**: Despliega contenedores Docker vía SSH y su respectiva config
-   - **approve-destroy**: Step de aprobación manual en este caso se comprueba que los contenedores de prometheus y grafana sean accesibles desde el browser y se hacen pruebas manuales implementando los dashboards (explicado mas abajo)
-   - **terraform-destroy**: Destruye la infraestructura (después de aprobación manual)
+3. Pipeline workflow:
+   - **terraform-deploy**: Testea y  Aprovisiona la infraestructura AWS
+   - **deploy-app**: Despliega contenedores Docker vía SSH con su respectiva configuracion
+   - **approve-destroy**: Step de aprobación manual en este caso se comprueba que los contenedores de prometheus y grafana sean accesibles desde el navegador y se hacen pruebas manuales  implementando los dashboards (explicado en los siguientes pasos)
+   - **terraform-destroy**: Destruye la infraestructura (después de la aprobación manual previa)
 
 ### Opción 2: Despliegue Manual
 1. Aqui podemos hacer todo el proceso de workflow de terraform desde local en caso de necesitar hacer pruebas o implementar mejoras rapidas sin pasar por CircleCI.
@@ -232,7 +239,7 @@ terraform plan -var-file="dev.tfvars"
 terraform apply -var-file="dev.tfvars"
 ```
 
-2.  Desplegar Contenedores copiando la config necesaria a la instancia ec2, a tener en cuenta que se debe harcodear el valor de usuario por defecto para grafana o en caso contrario definir el que tu quieras.
+2.  Desplegar Contenedores copiando la config necesaria a la instancia ec2, a tener en cuenta que se debe harcodear el valor de usuario por defecto para grafana, obtenerlo via API a Secrets Manager  o en caso contrario definir el que tu quieras.
 ```bash
 scp -i ~/.ssh/monitoring-key.pem docker/docker-compose.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
 scp -i ~/.ssh/monitoring-key.pem docker/prometheus.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
@@ -261,7 +268,7 @@ terraform destroy -var-file="dev.tfvars"
 
 Despues del despliegue acceder a los servicios usando la IP publica del EC2:
 
-**Grafana** `http://<EC2_IP>:3000`  
+**Grafana** `http://<EC2_IP>:3000`(autenticacion usuario/password)
 **Prometheus** `http://<EC2_IP>:9090` (Sin autenticación)
 
 ---
@@ -286,9 +293,7 @@ Despues del despliegue acceder a los servicios usando la IP publica del EC2:
    - Clic en: Import
 
 ### Métricas Disponibles
-
 Node Exporter recolecta métricas completas del sistema incluyendo:
-
 
 **CPU** `node_cpu_seconds_total`, `node_load1` 
 **Memoria**  `node_memory_MemTotal_bytes`, `node_memory_MemAvailable_bytes` 
@@ -296,7 +301,6 @@ Node Exporter recolecta métricas completas del sistema incluyendo:
 **Red**  `node_network_receive_bytes_total`, `node_network_transmit_bytes_total` 
 
 ### Probar Prometheus
-
 Acceder a Prometheus en `http://<EC2_IP>:9090` y probar esta query de ejemplo:
 
 ```promql
@@ -310,39 +314,36 @@ rate(node_cpu_seconds_total{mode="idle"}[1m])
 ## Deuda tecnica/mejoras
 
  # Terraform
-- mas validation conditions en recursos para evitar desplegar lo que no corresponde
-- Outputs de logs de apply para posibles troubleshootings erros
-- Secrets Manager module implementation
-- Input request para la ip publica a implementar el acceso ssh en el sg de la ec2 o implementar solucion nativa mas robusta de aws (SSM)
-- Lintern para detectar errrores , sintaxis obsoleta…
-- Destroy automatico si la pipeline falla
+- Implementar mas "validation conditions" en recursos para evitar desplegar lo que no corresponde
+- Secrets Manager y usuario IAM (CircleCI) implementarlo con IaC
+- Terraform Destroy automatico si la pipeline falla
 
 # Code repository
-- readme por cada carpeta para desengranar mejor las explicaciones y no tener solo un readme general
+- Readme por cada carpeta para desengranar mejor las explicaciones.
 - Changelog para control de los cambios de versiones
-- tag version release
-- Naming convention estandarizado e intuitivo de commits messages y ramas
+- Tag version release en el repositorio de trabajo
+- Naming convention estandarizado e intuitivo de mensajes de commit y ramas
 
 # EC2 Instance
-- Security compliance (hardening)
+- Implementar un Security Group mas robusto evitando tener puertos abiertos a 0.0.0.0/0
+- Security compliance (OS Hardening)
 - gp2 to gp3 volume type
 - Cambiar ec2 ami amazon linux 2023 ya que tiene awscli nativo
-- Asociar VPC Endpoint para acceder a Secrets manager
+- Asociar VPC Endpoint para acceder a Secrets manager para evitarn pasar por la red publica
 
 
 # Docker 
-  - Mejoras en compliance de seguridad (permisos root, posible mejoras en la conectividad de red, cambios de puertos default a mas robustos)
-  - desharcodear environment dev, prod y meterlo por variable
+  - Mejoras en compliance de seguridad siguiendo las mejores practicas
+  - Desharcodear environment dev, prod y meterlo por variable para despliegues multienvironment
 
 # Prometheus & grafana
    - cAdvisor para monitorizacion especifica del rendimiento dentro de los contenedores
-   - Automatizacion de los dashboards de grafana para evitar la implemnetacion manual desde el frontend
+   - Automatizacion de los dashboards de grafana para evitar la implemnetacion manual desde el dashboard
 
 # CircleCI
    - Implementacion de Orbs
-   - IAM User con permisos mas restrictivos
-   - Permisos ssh circleCI identificar workaround para evitar acceso a todos por ssh a la ec2
-   - Añadir control de errores robusto
-   - Sustituir sleeps por algo mas eficiente
-   - Reducir tiempo eliminando Sleeps
-   - Docker images mas ligeros para mejor performance de pipeline
+   - IAM User CircleCI con politicas de minimos privilegios
+   - Permisos SSH CircleCI identificar workaround para evitar acceso a 0.0.0.0/0 por SSH a la EC2
+   - Añadir control de errores robusto y debug mas completo
+   - Reducir tiempos de ejecucion eliminando Sleeps
+   - Implementar Docker images mas ligeros para mejorar tiempos de despliegues en pipelines
