@@ -52,7 +52,7 @@ jobs:
 
 
 ### Docker Workflow deployment ###
-   deploy-app:
+  deploy-app:
     docker:
       - image: cimg/base:edge
     steps:
@@ -110,7 +110,7 @@ jobs:
 
 
 ### Terraform destroy ###
-   terraform-destroy:
+  terraform-destroy:
     docker:
       - image: hashicorp/terraform:latest
     steps:
