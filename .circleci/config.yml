@@ -3,31 +3,43 @@ version: 2.1
 jobs:
 
 #### Terraform Workflow deployment ###
+  tflint:
+    docker:
+      - image: ghcr.io/terraform-linters/tflint:latest
+    steps:
+      - run:
+          name: Install dependencies
+          command: apk add --no-cache git openssh
+      - checkout
+
+      - run:
+          name: TFLint Init and Check
+          command: |
+            cd infra-aws/terraform/environments/dev
+            tflint --init
+            tflint --recursive --format compact
+
   terraform-deploy:
     docker:
       - image: hashicorp/terraform:latest
-    
     steps:
       - checkout
-      
-      - run:
-          name: Terraform Init
+
+      - run: 
+          name: Terraform Init and Validate
           command: |
             cd infra-aws/terraform/environments/dev
-            terraform init
-      
-      - run:
-          name: Terraform Validate
-          command: |
-            cd infra-aws/terraform/environments/dev
+            terraform fmt -check -recursive -diff
+            terraform init -backend=false
             terraform validate
-      
+
       - run:
           name: Terraform Plan
           command: |
             cd infra-aws/terraform/environments/dev
+            terraform init
             terraform plan -out=tfplan -var-file="dev.tfvars"
-      
+
       - run:
           name: Terraform Apply
           command: |
@@ -36,7 +48,6 @@ jobs:
             terraform output -raw monitoring_server_public_ip > /tmp/ec2_ip.txt
             cat /tmp/ec2_ip.txt
 
-      
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -46,18 +57,18 @@ jobs:
 ### Docker Workflow deployment ###
   deploy-app:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:edge
     steps:
       - checkout
-      
+
       - attach_workspace:
           at: /tmp
-      
+
       - run:
           name: Setup installation
           command: |
-            sudo apt-get update
-            sudo apt-get install -y openssh-client
+           sudo apt-get update
+           sudo apt-get install -y openssh-client
 
       - run:
           name: Setup SSH
@@ -70,14 +81,6 @@ jobs:
             ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts
 
       - run:
-          name: DEBUG SSH KEY
-          command: |
-            echo "SSH_PRIVATE_KEY length: ${#SSH_PRIVATE_KEY}"
-            ls -l ~/.ssh/monitoring_key || true
-            ssh-keygen -y -f ~/.ssh/monitoring_key || echo "INVALID KEY"
-            ssh-keygen -E md5 -lf ~/.ssh/monitoring_key
-
-      - run:
           name: Copy configuration files
           command: |
             EC2_IP=$(cat /tmp/ec2_ip.txt)
@@ -85,7 +88,7 @@ jobs:
             cd docker
             scp -i ~/.ssh/monitoring_key docker-compose.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
             scp -i ~/.ssh/monitoring_key prometheus.yml ubuntu@$EC2_IP:/home/ubuntu/monitoring/
-      
+
       - run:
           name: Deploy containers
           command: |
@@ -97,13 +100,13 @@ jobs:
                 --region eu-west-1 \
                 --output text \
                 --query SecretString)
-              
+
               export GF_SECURITY_ADMIN_USER=$(echo $SECRET | jq -r .username)
               export GF_SECURITY_ADMIN_PASSWORD=$(echo $SECRET | jq -r .password)
-              
+
               cd /home/ubuntu/monitoring
               docker compose up -d
-              
+
               echo "Deployment completedd"
               docker compose ps -a
             EOF
@@ -112,16 +115,16 @@ jobs:
 ### Terraform destroy ###
   terraform-destroy:
     docker:
-      - image: hashicorp/terraform:1.10
+      - image: hashicorp/terraform:latest
     steps:
       - checkout
-      
+
       - run:
           name: Terraform Init
           command: |
             cd infra-aws/terraform/environments/dev
             terraform init
-      
+
       - run:
           name: Terraform Destroy
           command: |
@@ -133,18 +136,41 @@ jobs:
 workflows:
   deploy-monitoring-stack:
     jobs:
-      - terraform-deploy
-      
+      - tflint:
+          filters:
+            branches:
+              only:
+                - main
+
+      - terraform-deploy:
+          requires:
+            - tflint
+          filters:
+            branches:
+              only:
+                - main
+
       - deploy-app:
           requires:
             - terraform-deploy
-      
+          filters:
+            branches:
+              only:
+                - main
+
       - approve-destroy:
           type: approval
           requires:
             - deploy-app
-      
+          filters:
+            branches:
+              only:
+                - main
+
       - terraform-destroy:
           requires:
             - approve-destroy
-
+          filters:
+            branches:
+              only:
+                - main
