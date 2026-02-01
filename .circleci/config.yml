@@ -136,21 +136,41 @@ jobs:
 workflows:
   deploy-monitoring-stack:
     jobs:
-      - tflint
+      - tflint:
+          filters:
+            branches:
+              only:
+                - main
 
       - terraform-deploy:
           requires:
             - tflint
+          filters:
+            branches:
+              only:
+                - main
 
       - deploy-app:
           requires:
             - terraform-deploy
+          filters:
+            branches:
+              only:
+                - main
 
       - approve-destroy:
           type: approval
           requires:
             - deploy-app
+          filters:
+            branches:
+              only:
+                - main
 
       - terraform-destroy:
           requires:
             - approve-destroy
+          filters:
+            branches:
+              only:
+                - main
