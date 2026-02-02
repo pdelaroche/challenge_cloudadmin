@@ -3,8 +3,7 @@ version: 2.1
 parameters:
   environment:
     type: string
-    default: << pipeline.parameters.env >>
-
+    default: dev
 
 jobs:
 
