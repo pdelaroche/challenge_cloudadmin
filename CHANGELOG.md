@@ -1,3 +1,7 @@
+## [2.0.1] - 2025-02-02
+
+- Switch base docker image from `edge` to `current` for better stability
+
 ## [2.0.0] - 2025-02-02
 
 - Update configuration pipeline to use dynamic environment parameter
