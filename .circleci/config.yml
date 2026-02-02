@@ -1,5 +1,11 @@
 version: 2.1
 
+parameters:
+  environment:
+    type: string
+    default: << pipeline.parameters.env >>
+
+
 jobs:
 
 #### Terraform Workflow deployment ###
@@ -15,7 +21,7 @@ jobs:
       - run:
           name: TFLint Init and Check
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.env >>
             tflint --init
             tflint --recursive --format compact
 
@@ -28,7 +34,7 @@ jobs:
       - run: 
           name: Terraform Init and Validate
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.env >>
             terraform fmt -check -recursive -diff
             terraform init -backend=false
             terraform validate
@@ -36,14 +42,14 @@ jobs:
       - run:
           name: Terraform Plan
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.env >>
             terraform init
-            terraform plan -out=tfplan -var-file="dev.tfvars"
+            terraform plan -out=tfplan -var-file="<< pipeline.parameters.env >>.tfvars"
 
       - run:
           name: Terraform Apply
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.env >>
             terraform apply -auto-approve tfplan
             terraform output -raw monitoring_server_public_ip > /tmp/ec2_ip.txt
             cat /tmp/ec2_ip.txt
@@ -96,7 +102,7 @@ jobs:
             EC2_IP=$(cat /tmp/ec2_ip.txt)
             ssh -i ~/.ssh/monitoring_key ubuntu@$EC2_IP \<< 'EOF'
               SECRET=$(aws secretsmanager get-secret-value \
-                --secret-id dev/grafana-credentials \
+                --secret-id << pipeline.parameters.env >>/grafana-credentials \
                 --region eu-west-1 \
                 --output text \
                 --query SecretString)
@@ -122,14 +128,14 @@ jobs:
       - run:
           name: Terraform Init
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.env >>
             terraform init
 
       - run:
           name: Terraform Destroy
           command: |
-            cd infra-aws/terraform/environments/dev
-            terraform destroy  -var-file="dev.tfvars" -auto-approve
+            cd infra-aws/terraform/environments/<< pipeline.parameters.env >>
+            terraform destroy  -var-file="<< pipeline.parameters.env >>.tfvars" -auto-approve
 
 
 ### Workflow implementation ###
