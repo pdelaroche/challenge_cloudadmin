@@ -1,6 +1,8 @@
 ## [2.0.0] - 2025-02-02
 
-Configuration to use dynamic environment parameters and update terraform.lock OS compatibility in PROD terraform environment
+- Update configuration pipeline to use dynamic environment parameter
+- Update terraform.lock OS in terraform Prod environment
+- Cleanup workflow filters in config.yml
 
 ## [1.1.2] - 2025-02-02
 
