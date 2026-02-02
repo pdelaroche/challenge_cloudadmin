@@ -62,7 +62,7 @@ jobs:
 ### Docker Workflow deployment ###
   deploy-app:
     docker:
-      - image: cimg/base:edge
+      - image: cimg/base:current
     steps:
       - checkout
 
