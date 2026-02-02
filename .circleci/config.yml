@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  environment:
+    type: string
+    default: dev
+
 jobs:
 
 #### Terraform Workflow deployment ###
@@ -15,7 +20,7 @@ jobs:
       - run:
           name: TFLint Init and Check
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.environment >>
             tflint --init
             tflint --recursive --format compact
 
@@ -25,10 +30,10 @@ jobs:
     steps:
       - checkout
 
-      - run: 
+      - run:
           name: Terraform Init and Validate
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.environment >>
             terraform fmt -check -recursive -diff
             terraform init -backend=false
             terraform validate
@@ -36,14 +41,14 @@ jobs:
       - run:
           name: Terraform Plan
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.environment >>
             terraform init
-            terraform plan -out=tfplan -var-file="dev.tfvars"
+            terraform plan -out=tfplan -var-file="<< pipeline.parameters.environment >>.tfvars"
 
       - run:
           name: Terraform Apply
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.environment >>
             terraform apply -auto-approve tfplan
             terraform output -raw monitoring_server_public_ip > /tmp/ec2_ip.txt
             cat /tmp/ec2_ip.txt
@@ -96,7 +101,7 @@ jobs:
             EC2_IP=$(cat /tmp/ec2_ip.txt)
             ssh -i ~/.ssh/monitoring_key ubuntu@$EC2_IP \<< 'EOF'
               SECRET=$(aws secretsmanager get-secret-value \
-                --secret-id dev/grafana-credentials \
+                --secret-id << pipeline.parameters.environment >>/grafana-credentials \
                 --region eu-west-1 \
                 --output text \
                 --query SecretString)
@@ -122,55 +127,55 @@ jobs:
       - run:
           name: Terraform Init
           command: |
-            cd infra-aws/terraform/environments/dev
+            cd infra-aws/terraform/environments/<< pipeline.parameters.environment >>
             terraform init
 
       - run:
           name: Terraform Destroy
           command: |
-            cd infra-aws/terraform/environments/dev
-            terraform destroy  -var-file="dev.tfvars" -auto-approve
+            cd infra-aws/terraform/environments/<< pipeline.parameters.environment >>
+            terraform destroy  -var-file="<< pipeline.parameters.environment >>.tfvars" -auto-approve
 
 
 ### Workflow implementation ###
 workflows:
   deploy-monitoring-stack:
     jobs:
-      - tflint:
-          filters:
-            branches:
-              only:
-                - main
+      - tflint
+          # filters:
+          #   branches:
+          #     only:
+          #       - main
 
       - terraform-deploy:
           requires:
             - tflint
-          filters:
-            branches:
-              only:
-                - main
+          # filters:
+          #   branches:
+          #     only:
+          #       - main
 
       - deploy-app:
           requires:
             - terraform-deploy
-          filters:
-            branches:
-              only:
-                - main
+          # filters:
+          #   branches:
+          #     only:
+          #       - main
 
       - approve-destroy:
           type: approval
           requires:
             - deploy-app
-          filters:
-            branches:
-              only:
-                - main
+          # filters:
+          #   branches:
+          #     only:
+          #       - main
 
       - terraform-destroy:
           requires:
             - approve-destroy
-          filters:
-            branches:
-              only:
-                - main
+          # filters:
+          #   branches:
+          #     only:
+          #       - main
