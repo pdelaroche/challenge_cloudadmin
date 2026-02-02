@@ -1,13 +1,13 @@
 
 ## Descripción General
 
-Este proyecto despliega un stack completo de monitorización en AWS utilizando principios Terraform. El resultado es a una instancia EC2 ejecutando contenedores con Prometheus y Grafana.
+Este proyecto despliega un stack completo de monitorización en AWS utilizando IaC con Terraform. El resultado es a una instancia EC2 ejecutando contenedores con Prometheus y Grafana.
 
 
 ## Arquitectura  diagram
 
 <img width="1635" height="1686" alt="Untitled-2026-01-29-2200" src="https://github.com/user-attachments/assets/ba1997a3-247e-4c3f-8de7-1c7e9623ec98" />
----
+
 
 ## Estructura del Proyecto
 
@@ -61,12 +61,26 @@ challenge_cloudadmin/
 
 ## Decisiones Técnicas
 
+### Insfrastucture as Code 
 
-### Tipo de Instancia: t3.micro
+**Decisión**: Terraform
 
-**Decisión**: t3.micro 
+**Justificación**: Es la herramienta con la que mas he trabajado hasta ahora y la implementacion sera mas sencilla gracias a este background de conocimiento previo.
 
-**Justificación**: Tier mas barata y suficiente para el proyecto de prueba
+###  Docker architecture
+
+**Decisión**: Docker Compose 
+
+**Justificación**:
+ Simplicidad y facil conectividad con red interna propia de docker para prometheus y grafana
+
+### Plataforma CI/CD: CircleCI
+
+**Decisión**: CircleCI
+
+**Justificación**: Intuitivo y facil integracion con github
+
+---
 
 ###  Terraform architecture
 # Environments:
@@ -116,19 +130,7 @@ Se han implementado dos modulos
   - main.tf: Definicion de las variables basicas necesarias entre las que destacan la key_pair (generada manualmente en aws) tambien se define la logica con resources para poder tener conectividad a secrets manager desde la EC2.
   - outputs.tf: Se definio el id de la instancia y su ip publica ya que son necesarios para implementar en la logica de cicd
 
-###  Docker architecture
-
-**Decisión**: Docker Compose 
-
-**Justificación**:
- Simplicidad y facil conectividad con red interna propia de docker para prometheus y grafana
-
-### Plataforma CI/CD: CircleCI
-
-**Decisión**: CircleCI
-
-**Justificación**: Intuitivo y facil integracion con github
-
+ ---
 
 ###  Arquitectura de Red: Subnet Pública Única
 
@@ -146,6 +148,7 @@ Route Table configurada para permitir la conectividad hacia el Internet Gateway
 - Terraform
 - Git
 - tflint
+- Docker
 - IDE (VS Code o el que prefieras)
 - Config AWS Credentials / SSO profile
 
@@ -310,7 +313,6 @@ rate(node_cpu_seconds_total{mode="idle"}[1m])
 
 ---
 
-
 ## Deuda tecnica/mejoras
 
  # Terraform
@@ -320,14 +322,12 @@ rate(node_cpu_seconds_total{mode="idle"}[1m])
 
 # Code repository
 - Readme por cada carpeta para desengranar mejor las explicaciones.
-- Changelog para control de los cambios de versiones
-- Tag version release en el repositorio de trabajo
 - Naming convention estandarizado e intuitivo de mensajes de commit y ramas
 
 # EC2 Instance
 - Implementar un Security Group mas robusto evitando tener puertos abiertos a 0.0.0.0/0
 - Security compliance (OS Hardening)
-- gp2 to gp3 volume type
+- gp2 a gp3 volume type para un mejor rendimiento
 - Cambiar ec2 ami amazon linux 2023 ya que tiene awscli nativo
 - Asociar VPC Endpoint para acceder a Secrets manager para evitarn pasar por la red publica
 
@@ -346,4 +346,4 @@ rate(node_cpu_seconds_total{mode="idle"}[1m])
    - Permisos SSH CircleCI identificar workaround para evitar acceso a 0.0.0.0/0 por SSH a la EC2
    - Añadir control de errores robusto y debug mas completo
    - Reducir tiempos de ejecucion eliminando Sleeps
-   - Implementar Docker images mas ligeros para mejorar tiempos de despliegues en pipelines
+   - Implementar Docker images optimizadas para mejorar tiempos de despliegues en pipelines
