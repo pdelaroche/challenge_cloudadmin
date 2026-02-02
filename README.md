@@ -1,10 +1,10 @@
 
 ## Descripción General
 
-Este proyecto despliega un stack completo de monitorización en AWS utilizando IaC con Terraform. El resultado es a una instancia EC2 ejecutando contenedores con Prometheus y Grafana.
+Este proyecto despliega un stack completo de monitorización en AWS utilizando IaC con Terraform. El resultado es una instancia EC2 ejecutando contenedores con Prometheus y Grafana.
 
 
-## Arquitectura  diagram
+## Diagrama de Arquitectura
 
 <img width="1635" height="1686" alt="Untitled-2026-01-29-2200" src="https://github.com/user-attachments/assets/ba1997a3-247e-4c3f-8de7-1c7e9623ec98" />
 
@@ -82,8 +82,8 @@ challenge_cloudadmin/
 
 ---
 
-###  Terraform architecture
-# Environments:
+#  Terraform architecture
+### Environments:
 -  Dev y Prod: Separe por entornos para aislar los recursos y definir la variable env_01 que se modifica segun dicho entorno. 
 La ejecucion del terraform apply se debe hacer con las tfvars correspondientes de cada entorno.
 
@@ -106,7 +106,14 @@ La ejecucion del terraform apply se debe hacer con las tfvars correspondientes d
 │       │       ├── variables.tf  
 │       │       └── versions.tf
 ```
-# Modules:
+### Modules:
+Se han implementado dos modulos
+- Network: Definimos la logica de red basica con una public subnet, un sg estos se implementaron en outputs.tf por la dependencia que tendra con el siguiente modulo de compute
+- Compute: 
+  - data.tf: Definicion de todos los metadatos del tipo de ami a utilizar en este caso Ubuntu22.04:latest.
+  - main.tf: Definicion de las variables basicas necesarias entre las que destacan la key_pair (generada manualmente en aws) tambien se define la logica con resources para poder tener conectividad a secrets manager desde la EC2.
+  - outputs.tf: Se definio el id de la instancia y su ip publica ya que son necesarios para implementar en la logica de cicd
+
 ```
 │       ├── modules/
 │       │   ├── compute/
@@ -123,24 +130,18 @@ La ejecucion del terraform apply se debe hacer con las tfvars correspondientes d
 │       │       └── variables.tf
 │       │       └── versions.tf
 ```
-Se han implementado dos modulos
-- Network: Definimos la logica de red basica con una public subnet, un sg estos se implementaron en outputs.tf por la dependencia que tendra con el siguiente modulo de compute
-- Compute: 
-  - data.tf: Definicion de todos los metadatos del tipo de ami a utilizar en este caso Ubuntu22.04:latest.
-  - main.tf: Definicion de las variables basicas necesarias entre las que destacan la key_pair (generada manualmente en aws) tambien se define la logica con resources para poder tener conectividad a secrets manager desde la EC2.
-  - outputs.tf: Se definio el id de la instancia y su ip publica ya que son necesarios para implementar en la logica de cicd
 
  ---
 
 ###  Arquitectura de Red: Subnet Pública Única
 
-Subnet pública con Internet Gateway
-Security group para permitir la carga de trabajo con prometheus, grafana y la conectividad SSH de CircleCI
-Route Table configurada para permitir la conectividad hacia el Internet Gateway
+ - Subnet pública con Internet Gateway
+ - Security group para permitir la carga de trabajo con prometheus, grafana y la conectividad SSH de CircleCI
+ - Route Table configurada para permitir la conectividad hacia el Internet Gateway
 
 ---
 
-## Configuraciones y Prerrequisitos
+# Configuraciones y Prerrequisitos
 
 ### Requisitos Locales para testeo manual
 - OS: Linux terminal
@@ -217,7 +218,7 @@ scrape_configs:
 
 ---
 
-## Despliegue
+# Despliegue
 
 ### Opción 1: Despliegue Automatizado vía CircleCI
 
@@ -271,8 +272,8 @@ terraform destroy -var-file="dev.tfvars"
 
 Despues del despliegue acceder a los servicios usando la IP publica del EC2:
 
-**Grafana** `http://<EC2_IP>:3000`(autenticacion usuario/password)
-**Prometheus** `http://<EC2_IP>:9090` (Sin autenticación)
+- **Grafana** `http://<EC2_IP>:3000`(autenticacion usuario/password)
+- **Prometheus** `http://<EC2_IP>:9090` (Sin autenticación)
 
 ---
 
@@ -298,10 +299,10 @@ Despues del despliegue acceder a los servicios usando la IP publica del EC2:
 ### Métricas Disponibles
 Node Exporter recolecta métricas completas del sistema incluyendo:
 
-**CPU** `node_cpu_seconds_total`, `node_load1` 
-**Memoria**  `node_memory_MemTotal_bytes`, `node_memory_MemAvailable_bytes` 
-**Disco** `node_filesystem_size_bytes`, `node_disk_io_time_seconds_total` 
-**Red**  `node_network_receive_bytes_total`, `node_network_transmit_bytes_total` 
+- **CPU** `node_cpu_seconds_total`, `node_load1` 
+- **Memoria**  `node_memory_MemTotal_bytes`, `node_memory_MemAvailable_bytes` 
+- **Disco** `node_filesystem_size_bytes`, `node_disk_io_time_seconds_total` 
+- **Red**  `node_network_receive_bytes_total`, `node_network_transmit_bytes_total` 
 
 ### Probar Prometheus
 Acceder a Prometheus en `http://<EC2_IP>:9090` y probar esta query de ejemplo:
@@ -313,18 +314,18 @@ rate(node_cpu_seconds_total{mode="idle"}[1m])
 
 ---
 
-## Deuda tecnica/mejoras
+# Deuda tecnica/mejoras
 
- # Terraform
+ ### Terraform
 - Implementar mas "validation conditions" en recursos para evitar desplegar lo que no corresponde
 - Secrets Manager y usuario IAM (CircleCI) implementarlo con IaC
 - Terraform Destroy automatico si la pipeline falla
 
-# Code repository
+### Code repository
 - Readme por cada carpeta para desengranar mejor las explicaciones.
 - Naming convention estandarizado e intuitivo de mensajes de commit y ramas
 
-# EC2 Instance
+### EC2 Instance
 - Implementar un Security Group mas robusto evitando tener puertos abiertos a 0.0.0.0/0
 - Security compliance (OS Hardening)
 - gp2 a gp3 volume type para un mejor rendimiento
@@ -332,18 +333,21 @@ rate(node_cpu_seconds_total{mode="idle"}[1m])
 - Asociar VPC Endpoint para acceder a Secrets manager para evitarn pasar por la red publica
 
 
-# Docker 
+### Docker 
   - Mejoras en compliance de seguridad siguiendo las mejores practicas
   - Desharcodear environment dev, prod y meterlo por variable para despliegues multienvironment
 
-# Prometheus & grafana
+### Prometheus & grafana
    - cAdvisor para monitorizacion especifica del rendimiento dentro de los contenedores
    - Automatizacion de los dashboards de grafana para evitar la implemnetacion manual desde el dashboard
 
-# CircleCI
+### CircleCI
    - Implementacion de Orbs
    - IAM User CircleCI con politicas de minimos privilegios
    - Permisos SSH CircleCI identificar workaround para evitar acceso a 0.0.0.0/0 por SSH a la EC2
    - Añadir control de errores robusto y debug mas completo
+
+     
    - Reducir tiempos de ejecucion eliminando Sleeps
    - Implementar Docker images optimizadas para mejorar tiempos de despliegues en pipelines
+     
